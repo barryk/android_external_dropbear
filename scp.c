@@ -70,6 +70,9 @@
  *
  */
 
+#define S_IWRITE 0200
+#define HAVE_BWLIMIT 0
+
 #include "includes.h"
 /*RCSID("$OpenBSD: scp.c,v 1.130 2006/01/31 10:35:43 djm Exp $");*/
 
@@ -308,10 +311,12 @@ main(int argc, char **argv)
 	memset(&args, '\0', sizeof(args));
 	args.list = NULL;
 	addargs(&args, "%s", ssh_program);
+#if 0 /* dropbear ssh client doesn't understand these */
 	addargs(&args, "-x");
 	addargs(&args, "-oForwardAgent no");
 	addargs(&args, "-oPermitLocalCommand no");
 	addargs(&args, "-oClearAllForwardings yes");
+#endif
 
 	fflag = tflag = 0;
 	while ((ch = getopt(argc, argv, "dfl:prtvBCc:i:P:q1246S:o:F:")) != -1)
@@ -681,8 +686,10 @@ next:			if (fd != -1) {
 					haderr = errno;
 				statbytes += result;
 			}
+#if HAVE_BWLIMIT
 			if (limit_rate)
 				bwlimit(amt);
+#endif
 		}
 #ifdef PROGRESS_METER
 		if (showprogress)
@@ -755,6 +762,7 @@ rsource(char *name, struct stat *statp)
 	(void) response();
 }
 
+#if HAVE_BWLIMIT
 void
 bwlimit(int amount)
 {
@@ -808,6 +816,7 @@ bwlimit(int amount)
 	lamt = 0;
 	gettimeofday(&bwstart, NULL);
 }
+#endif
 
 void
 sink(int argc, char **argv)
@@ -1013,8 +1022,10 @@ bad:			run_err("%s: %s", np, strerror(errno));
 				statbytes += j;
 			} while (amt > 0);
 
+#if HAVE_BWLIMIT
 			if (limit_rate)
 				bwlimit(4096);
+#endif
 
 			if (count == bp->cnt) {
 				/* Keep reading so we stay sync'd up. */

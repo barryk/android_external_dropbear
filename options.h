@@ -72,10 +72,10 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
  * (eg AES256 as well as AES128) will result in a minimal size increase.*/
 #define DROPBEAR_AES128_CBC
 #define DROPBEAR_3DES_CBC
-#define DROPBEAR_AES256_CBC
-#define DROPBEAR_BLOWFISH_CBC
-#define DROPBEAR_TWOFISH256_CBC
-#define DROPBEAR_TWOFISH128_CBC
+//#define DROPBEAR_AES256_CBC
+//#define DROPBEAR_BLOWFISH_CBC
+//#define DROPBEAR_TWOFISH256_CBC
+//#define DROPBEAR_TWOFISH128_CBC
 
 /* Message Integrity - at least one required.
  * RFC Draft requires sha1 and recommends sha1-96.
@@ -203,7 +203,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 
 /* This is used by the scp binary when used as a client binary. If you're
  * not using the Dropbear client, you'll need to change it */
-#define _PATH_SSH_PROGRAM "/usr/bin/dbclient"
+#define _PATH_SSH_PROGRAM "/system/bin/ssh"
 
 /* Whether to log commands executed by a client. This only logs the 
  * (single) command sent to the server, not what a user did in a 
