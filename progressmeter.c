@@ -30,7 +30,7 @@
 #include "atomicio.h"
 #include "scpmisc.h"
 
-#define DEFAULT_WINSIZE 40
+#define DEFAULT_WINSIZE 80
 #define MAX_WINSIZE 512
 #define PADDING 1		/* padding between the progress indicators */
 #define UPDATE_INTERVAL 1	/* update the progress meter every second */

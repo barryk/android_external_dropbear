@@ -34,6 +34,7 @@
 #include "channel.h"
 #include "ssh.h"
 #include "listener.h"
+#include "runopts.h"
 
 static void send_msg_channel_open_failure(unsigned int remotechan, int reason,
 		const unsigned char *text, const unsigned char *lang);
@@ -150,11 +151,11 @@ struct Channel* newchannel(unsigned int remotechan,
 	newchan->await_open = 0;
 	newchan->flushing = 0;
 
-	newchan->writebuf = cbuf_new(RECV_MAXWINDOW);
+	newchan->writebuf = cbuf_new(opts.recv_window);
 	newchan->extrabuf = NULL; /* The user code can set it up */
-	newchan->recvwindow = RECV_MAXWINDOW;
+	newchan->recvwindow = opts.recv_window;
 	newchan->recvdonelen = 0;
-	newchan->recvmaxpacket = RECV_MAXPACKET;
+	newchan->recvmaxpacket = RECV_MAX_PAYLOAD_LEN;
 
 	ses.channels[i] = newchan;
 	ses.chancount++;
@@ -260,6 +261,7 @@ static unsigned int write_pending(struct Channel * channel) {
 
 /* EOF/close handling */
 static void check_close(struct Channel *channel) {
+	int close_allowed = 0;
 
 	TRACE(("check_close: writefd %d, readfd %d, errfd %d, sent_close %d, recv_close %d",
 				channel->writefd, channel->readfd,
@@ -273,8 +275,17 @@ static void check_close(struct Channel *channel) {
 	{
 		channel->flushing = 1;
 	}
+	
+	/* if a type-specific check_close is defined we will only exit
+	   once that has been triggered. this is only used for a server "session"
+	   channel, to ensure that the shell has exited (and the exit status 
+	   retrieved) before we close things up. */
+	if (!channel->type->check_close	
+			|| channel->type->check_close(channel)) {
+		close_allowed = 1;
+	}
 
-	if (channel->recv_close && !write_pending(channel)) {
+	if (channel->recv_close && !write_pending(channel) && close_allowed) {
 		if (!channel->sent_close) {
 			TRACE(("Sending MSG_CHANNEL_CLOSE in response to same."))
 			send_msg_channel_close(channel);
@@ -311,9 +322,10 @@ static void check_close(struct Channel *channel) {
 	}
 
 	/* And if we can't receive any more data from them either, close up */
-	if (!channel->sent_close
-			&& channel->readfd == FD_CLOSED
+	if (channel->readfd == FD_CLOSED
 			&& (ERRFD_IS_WRITE(channel) || channel->errfd == FD_CLOSED)
+			&& !channel->sent_close
+			&& close_allowed
 			&& !write_pending(channel)) {
 		TRACE(("sending close, readfd is closed"))
 		send_msg_channel_close(channel);
@@ -421,7 +433,7 @@ static void writechannel(struct Channel* channel, int fd, circbuffer *cbuf) {
 		channel->recvdonelen = 0;
 	}
 
-	dropbear_assert(channel->recvwindow <= RECV_MAXWINDOW);
+	dropbear_assert(channel->recvwindow <= opts.recv_window);
 	dropbear_assert(channel->recvwindow <= cbuf_getavail(channel->writebuf));
 	dropbear_assert(channel->extrabuf == NULL ||
 			channel->recvwindow <= cbuf_getavail(channel->extrabuf));
@@ -560,6 +572,11 @@ void recv_msg_channel_request() {
 	
 	channel = getchannel();
 
+	if (channel->sent_close) {
+		TRACE(("leave recv_msg_channel_request: already closed channel"))
+		return;
+	}
+
 	if (channel->type->reqhandler) {
 		channel->type->reqhandler(channel);
 	} else {
@@ -674,7 +691,7 @@ void common_recv_msg_channel_data(struct Channel *channel, int fd,
 		dropbear_exit("received data after eof");
 	}
 
- 	if (fd < 0) {
+	if (fd < 0) {
 		/* If we have encountered failed write, the far side might still
 		 * be sending data without having yet received our close notification.
 		 * We just drop the data. */
@@ -710,7 +727,7 @@ void common_recv_msg_channel_data(struct Channel *channel, int fd,
 
 	dropbear_assert(channel->recvwindow >= datalen);
 	channel->recvwindow -= datalen;
-	dropbear_assert(channel->recvwindow <= RECV_MAXWINDOW);
+	dropbear_assert(channel->recvwindow <= opts.recv_window);
 
 	TRACE(("leave recv_msg_channel_data"))
 }
@@ -727,10 +744,10 @@ void recv_msg_channel_window_adjust() {
 	
 	incr = buf_getint(ses.payload);
 	TRACE(("received window increment %d", incr))
-	incr = MIN(incr, MAX_TRANS_WIN_INCR);
+	incr = MIN(incr, TRANS_MAX_WIN_INCR);
 	
 	channel->transwindow += incr;
-	channel->transwindow = MIN(channel->transwindow, MAX_TRANS_WINDOW);
+	channel->transwindow = MIN(channel->transwindow, TRANS_MAX_WINDOW);
 
 }
 
@@ -769,9 +786,9 @@ void recv_msg_channel_open() {
 
 	remotechan = buf_getint(ses.payload);
 	transwindow = buf_getint(ses.payload);
-	transwindow = MIN(transwindow, MAX_TRANS_WINDOW);
+	transwindow = MIN(transwindow, TRANS_MAX_WINDOW);
 	transmaxpacket = buf_getint(ses.payload);
-	transmaxpacket = MIN(transmaxpacket, MAX_TRANS_PAYLOAD_LEN);
+	transmaxpacket = MIN(transmaxpacket, TRANS_MAX_PAYLOAD_LEN);
 
 	/* figure what type of packet it is */
 	if (typelen > MAX_NAME_LEN) {
@@ -970,8 +987,8 @@ int send_msg_channel_open_init(int fd, const struct ChanType *type) {
 	buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_OPEN);
 	buf_putstring(ses.writepayload, type->name, strlen(type->name));
 	buf_putint(ses.writepayload, chan->index);
-	buf_putint(ses.writepayload, RECV_MAXWINDOW);
-	buf_putint(ses.writepayload, RECV_MAXPACKET);
+	buf_putint(ses.writepayload, opts.recv_window);
+	buf_putint(ses.writepayload, RECV_MAX_PAYLOAD_LEN);
 
 	TRACE(("leave send_msg_channel_open_init()"))
 	return DROPBEAR_SUCCESS;

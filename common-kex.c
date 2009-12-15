@@ -188,8 +188,6 @@ void kexfirstinitialise() {
 /* Reset the kex state, ready for a new negotiation */
 static void kexinitialise() {
 
-	struct timeval tv;
-
 	TRACE(("kexinitialise()"))
 
 	/* sent/recv'd MSG_KEXINIT */
@@ -206,10 +204,7 @@ static void kexinitialise() {
 	ses.kexstate.datatrans = 0;
 	ses.kexstate.datarecv = 0;
 
-	if (gettimeofday(&tv, 0) < 0) {
-		dropbear_exit("Error getting time");
-	}
-	ses.kexstate.lastkextime = tv.tv_sec;
+	ses.kexstate.lastkextime = time(NULL);
 
 }
 
@@ -300,19 +295,20 @@ void gen_new_keys() {
 	recv_cipher = find_cipher(ses.newkeys->recv_algo_crypt->cipherdesc->name);
 	if (recv_cipher < 0)
 	    dropbear_exit("crypto error");
-		
-	if (cbc_start(recv_cipher, recv_IV, recv_key, 
+	if (ses.newkeys->recv_crypt_mode->start(recv_cipher, 
+			recv_IV, recv_key, 
 			ses.newkeys->recv_algo_crypt->keysize, 0, 
-			&ses.newkeys->recv_symmetric_struct) != CRYPT_OK) {
+			&ses.newkeys->recv_cipher_state) != CRYPT_OK) {
 		dropbear_exit("crypto error");
 	}
+
 	trans_cipher = find_cipher(ses.newkeys->trans_algo_crypt->cipherdesc->name);
 	if (trans_cipher < 0)
 	    dropbear_exit("crypto error");
-		
-	if (cbc_start(trans_cipher, trans_IV, trans_key, 
+	if (ses.newkeys->trans_crypt_mode->start(trans_cipher, 
+			trans_IV, trans_key, 
 			ses.newkeys->trans_algo_crypt->keysize, 0, 
-			&ses.newkeys->trans_symmetric_struct) != CRYPT_OK) {
+			&ses.newkeys->trans_cipher_state) != CRYPT_OK) {
 		dropbear_exit("crypto error");
 	}
 	
@@ -336,12 +332,26 @@ void gen_new_keys() {
 }
 
 #ifndef DISABLE_ZLIB
+
+int is_compress_trans() {
+	return ses.keys->trans_algo_comp == DROPBEAR_COMP_ZLIB
+		|| (ses.authstate.authdone
+			&& ses.keys->trans_algo_comp == DROPBEAR_COMP_ZLIB_DELAY);
+}
+
+int is_compress_recv() {
+	return ses.keys->recv_algo_comp == DROPBEAR_COMP_ZLIB
+		|| (ses.authstate.authdone
+			&& ses.keys->recv_algo_comp == DROPBEAR_COMP_ZLIB_DELAY);
+}
+
 /* Set up new zlib compression streams, close the old ones. Only
  * called from gen_new_keys() */
 static void gen_new_zstreams() {
 
 	/* create new zstreams */
-	if (ses.newkeys->recv_algo_comp == DROPBEAR_COMP_ZLIB) {
+	if (ses.newkeys->recv_algo_comp == DROPBEAR_COMP_ZLIB
+			|| ses.newkeys->recv_algo_comp == DROPBEAR_COMP_ZLIB_DELAY) {
 		ses.newkeys->recv_zstream = (z_streamp)m_malloc(sizeof(z_stream));
 		ses.newkeys->recv_zstream->zalloc = Z_NULL;
 		ses.newkeys->recv_zstream->zfree = Z_NULL;
@@ -353,7 +363,8 @@ static void gen_new_zstreams() {
 		ses.newkeys->recv_zstream = NULL;
 	}
 
-	if (ses.newkeys->trans_algo_comp == DROPBEAR_COMP_ZLIB) {
+	if (ses.newkeys->trans_algo_comp == DROPBEAR_COMP_ZLIB
+			|| ses.newkeys->trans_algo_comp == DROPBEAR_COMP_ZLIB_DELAY) {
 		ses.newkeys->trans_zstream = (z_streamp)m_malloc(sizeof(z_stream));
 		ses.newkeys->trans_zstream->zalloc = Z_NULL;
 		ses.newkeys->trans_zstream->zfree = Z_NULL;
@@ -365,7 +376,7 @@ static void gen_new_zstreams() {
 	} else {
 		ses.newkeys->trans_zstream = NULL;
 	}
-	
+
 	/* clean up old keys */
 	if (ses.keys->recv_zstream != NULL) {
 		if (inflateEnd(ses.keys->recv_zstream) == Z_STREAM_ERROR) {
@@ -382,7 +393,7 @@ static void gen_new_zstreams() {
 		m_free(ses.keys->trans_zstream);
 	}
 }
-#endif
+#endif /* DISABLE_ZLIB */
 
 
 /* Executed upon receiving a kexinit message from the client to initiate
@@ -691,6 +702,10 @@ static void read_kex_algos() {
 			(struct dropbear_cipher*)s2c_cipher_algo->data;
 		ses.newkeys->trans_algo_crypt = 
 			(struct dropbear_cipher*)c2s_cipher_algo->data;
+		ses.newkeys->recv_crypt_mode = 
+			(struct dropbear_cipher_mode*)s2c_cipher_algo->mode;
+		ses.newkeys->trans_crypt_mode =
+			(struct dropbear_cipher_mode*)c2s_cipher_algo->mode;
 		ses.newkeys->recv_algo_mac = 
 			(struct dropbear_hash*)s2c_hash_algo->data;
 		ses.newkeys->trans_algo_mac = 
@@ -703,6 +718,10 @@ static void read_kex_algos() {
 			(struct dropbear_cipher*)c2s_cipher_algo->data;
 		ses.newkeys->trans_algo_crypt = 
 			(struct dropbear_cipher*)s2c_cipher_algo->data;
+		ses.newkeys->recv_crypt_mode =
+			(struct dropbear_cipher_mode*)c2s_cipher_algo->mode;
+		ses.newkeys->trans_crypt_mode =
+			(struct dropbear_cipher_mode*)s2c_cipher_algo->mode;
 		ses.newkeys->recv_algo_mac = 
 			(struct dropbear_hash*)c2s_hash_algo->data;
 		ses.newkeys->trans_algo_mac = 

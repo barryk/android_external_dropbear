@@ -80,8 +80,11 @@ static void printhelp(const char * progname) {
 #ifdef INETD_MODE
 					"-i		Start for inetd\n"
 #endif
+					"-W <receive_window_buffer> (default %d, larger may be faster, max 1MB)\n"
+					"-K <keepalive>  (0 is never, default %d)\n"
+					"-I <idle_timeout>  (0 is never, default %d)\n"
 #ifdef DEBUG_TRACE
-					"-v		verbose\n"
+					"-v		verbose (compiled with DEBUG_TRACE)\n"
 #endif
 					,DROPBEAR_VERSION, progname,
 #ifdef DROPBEAR_DSS
@@ -90,7 +93,8 @@ static void printhelp(const char * progname) {
 #ifdef DROPBEAR_RSA
 					RSA_PRIV_FILENAME,
 #endif
-					DROPBEAR_MAX_PORTS, DROPBEAR_DEFPORT, DROPBEAR_PIDFILE);
+					DROPBEAR_MAX_PORTS, DROPBEAR_DEFPORT, DROPBEAR_PIDFILE,
+					DEFAULT_RECV_WINDOW, DEFAULT_KEEPALIVE, DEFAULT_IDLE_TIMEOUT);
 }
 
 void svr_getopts(int argc, char ** argv) {
@@ -98,6 +102,9 @@ void svr_getopts(int argc, char ** argv) {
 	unsigned int i;
 	char ** next = 0;
 	int nextisport = 0;
+	char* recv_window_arg = NULL;
+	char* keepalive_arg = NULL;
+	char* idle_timeout_arg = NULL;
 
 	/* see printhelp() for options */
 	svr_opts.rsakeyfile = NULL;
@@ -128,6 +135,10 @@ void svr_getopts(int argc, char ** argv) {
 #ifndef DISABLE_SYSLOG
 	svr_opts.usingsyslog = 1;
 #endif
+	opts.recv_window = DEFAULT_RECV_WINDOW;
+	opts.keepalive_secs = DEFAULT_KEEPALIVE;
+	opts.idle_timeout_secs = DEFAULT_IDLE_TIMEOUT;
+	
 #ifdef ENABLE_SVR_REMOTETCPFWD
 	opts.listen_fwd_all = 0;
 #endif
@@ -204,6 +215,15 @@ void svr_getopts(int argc, char ** argv) {
 				case 'w':
 					svr_opts.norootlogin = 1;
 					break;
+				case 'W':
+					next = &recv_window_arg;
+					break;
+				case 'K':
+					next = &keepalive_arg;
+					break;
+				case 'I':
+					next = &idle_timeout_arg;
+					break;
 #if defined(ENABLE_SVR_PASSWORD_AUTH) || defined(ENABLE_SVR_PAM_AUTH)
 				case 's':
 					svr_opts.noauthpass = 1;
@@ -215,6 +235,9 @@ void svr_getopts(int argc, char ** argv) {
 				case 'h':
 					printhelp(argv[0]);
 					exit(EXIT_FAILURE);
+					break;
+				case 'u':
+					/* backwards compatibility with old urandom option */
 					break;
 #ifdef DEBUG_TRACE
 				case 'v':
@@ -236,7 +259,7 @@ void svr_getopts(int argc, char ** argv) {
 		svr_opts.addresses[0] = m_strdup(DROPBEAR_DEFADDRESS);
 		svr_opts.portcount = 1;
 	}
-        
+
 	if (svr_opts.dsskeyfile == NULL) {
 		svr_opts.dsskeyfile = DSS_PRIV_FILENAME;
 	}
@@ -262,8 +285,27 @@ void svr_getopts(int argc, char ** argv) {
 					svr_opts.bannerfile);
 		}
 		buf_setpos(svr_opts.banner, 0);
+
+	}
+	
+	if (recv_window_arg) {
+		opts.recv_window = atol(recv_window_arg);
+		if (opts.recv_window == 0 || opts.recv_window > MAX_RECV_WINDOW) {
+			dropbear_exit("Bad recv window '%s'", recv_window_arg);
+		}
+	}
+	
+	if (keepalive_arg) {
+		if (m_str_to_uint(keepalive_arg, &opts.keepalive_secs) == DROPBEAR_FAILURE) {
+			dropbear_exit("Bad keepalive '%s'", keepalive_arg);
+		}
 	}
 
+	if (idle_timeout_arg) {
+		if (m_str_to_uint(idle_timeout_arg, &opts.idle_timeout_secs) == DROPBEAR_FAILURE) {
+			dropbear_exit("Bad idle_timeout '%s'", idle_timeout_arg);
+		}
+	}
 }
 
 static void addportandaddress(char* spec) {

@@ -69,10 +69,7 @@
  * SUCH DAMAGE.
  *
  */
-
 #define S_IWRITE 0200
-#define HAVE_BWLIMIT 0
-
 #include "includes.h"
 /*RCSID("$OpenBSD: scp.c,v 1.130 2006/01/31 10:35:43 djm Exp $");*/
 
@@ -81,7 +78,6 @@
 #include "scpmisc.h"
 #include "progressmeter.h"
 
-void bwlimit(int);
 
 /* Struct for addargs */
 arglist args;
@@ -133,13 +129,22 @@ do_local_cmd(arglist *a)
 			fprintf(stderr, " %s", a->list[i]);
 		fprintf(stderr, "\n");
 	}
-	if ((pid = fork()) == -1)
+#ifdef __uClinux__
+	pid = vfork();
+#else
+	pid = fork();
+#endif /* __uClinux__ */
+	if (pid == -1)
 		fatal("do_local_cmd: fork: %s", strerror(errno));
 
 	if (pid == 0) {
 		execvp(a->list[0], a->list);
 		perror(a->list[0]);
+#ifdef __uClinux__
+		_exit(1);
+#else
 		exit(1);
+#endif /* __uClinux__ */
 	}
 
 	do_cmd_pid = pid;
@@ -203,7 +208,7 @@ do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout, int argc)
 #endif /* __uClinux__ */
 
 	/* Fork a child to execute the command on the remote host using ssh. */
-#ifndef __uClinux__
+#ifdef __uClinux__
 	do_cmd_pid = vfork();
 #else
 	do_cmd_pid = fork();
@@ -228,7 +233,11 @@ do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout, int argc)
 
 		execvp(ssh_program, args.list);
 		perror(ssh_program);
+#ifndef __uClinux__
 		exit(1);
+#else
+		_exit(1);
+#endif /* __uClinux__ */
 	} else if (do_cmd_pid == -1) {
 		fatal("fork: %s", strerror(errno));
 	}
@@ -311,12 +320,6 @@ main(int argc, char **argv)
 	memset(&args, '\0', sizeof(args));
 	args.list = NULL;
 	addargs(&args, "%s", ssh_program);
-#if 0 /* dropbear ssh client doesn't understand these */
-	addargs(&args, "-x");
-	addargs(&args, "-oForwardAgent no");
-	addargs(&args, "-oPermitLocalCommand no");
-	addargs(&args, "-oClearAllForwardings yes");
-#endif
 
 	fflag = tflag = 0;
 	while ((ch = getopt(argc, argv, "dfl:prtvBCc:i:P:q1246S:o:F:")) != -1)
@@ -686,10 +689,6 @@ next:			if (fd != -1) {
 					haderr = errno;
 				statbytes += result;
 			}
-#if HAVE_BWLIMIT
-			if (limit_rate)
-				bwlimit(amt);
-#endif
 		}
 #ifdef PROGRESS_METER
 		if (showprogress)
@@ -761,62 +760,6 @@ rsource(char *name, struct stat *statp)
 	(void) atomicio(vwrite, remout, "E\n", 2);
 	(void) response();
 }
-
-#if HAVE_BWLIMIT
-void
-bwlimit(int amount)
-{
-	static struct timeval bwstart, bwend;
-	static int lamt, thresh = 16384;
-	u_int64_t waitlen;
-	struct timespec ts, rm;
-
-	if (!timerisset(&bwstart)) {
-		gettimeofday(&bwstart, NULL);
-		return;
-	}
-
-	lamt += amount;
-	if (lamt < thresh)
-		return;
-
-	gettimeofday(&bwend, NULL);
-	timersub(&bwend, &bwstart, &bwend);
-	if (!timerisset(&bwend))
-		return;
-
-	lamt *= 8;
-	waitlen = (double)1000000L * lamt / limit_rate;
-
-	bwstart.tv_sec = waitlen / 1000000L;
-	bwstart.tv_usec = waitlen % 1000000L;
-
-	if (timercmp(&bwstart, &bwend, >)) {
-		timersub(&bwstart, &bwend, &bwend);
-
-		/* Adjust the wait time */
-		if (bwend.tv_sec) {
-			thresh /= 2;
-			if (thresh < 2048)
-				thresh = 2048;
-		} else if (bwend.tv_usec < 100) {
-			thresh *= 2;
-			if (thresh > 32768)
-				thresh = 32768;
-		}
-
-		TIMEVAL_TO_TIMESPEC(&bwend, &ts);
-		while (nanosleep(&ts, &rm) == -1) {
-			if (errno != EINTR)
-				break;
-			ts = rm;
-		}
-	}
-
-	lamt = 0;
-	gettimeofday(&bwstart, NULL);
-}
-#endif
 
 void
 sink(int argc, char **argv)
@@ -1021,11 +964,6 @@ bad:			run_err("%s: %s", np, strerror(errno));
 				cp += j;
 				statbytes += j;
 			} while (amt > 0);
-
-#if HAVE_BWLIMIT
-			if (limit_rate)
-				bwlimit(4096);
-#endif
 
 			if (count == bp->cnt) {
 				/* Keep reading so we stay sync'd up. */

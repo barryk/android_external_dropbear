@@ -56,8 +56,8 @@ void process_packet() {
 	switch(type) {
 
 		case SSH_MSG_IGNORE:
+			goto out;
 		case SSH_MSG_DEBUG:
-			TRACE(("received SSH_MSG_IGNORE or SSH_MSG_DEBUG"))
 			goto out;
 
 		case SSH_MSG_UNIMPLEMENTED:
@@ -70,6 +70,7 @@ void process_packet() {
 			dropbear_close("Disconnect received");
 	}
 
+    ses.last_packet_time = time(NULL);
 
 	/* This applies for KEX, where the spec says the next packet MUST be
 	 * NEWKEYS */
