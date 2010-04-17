@@ -53,18 +53,24 @@ pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, int namebuflen)
 	char *name;
 	int i;
 
+#if !defined(HAVE_TTYNAME)
+	i = openpty(ptyfd, ttyfd, namebuf, NULL, NULL);
+#else
 	i = openpty(ptyfd, ttyfd, NULL, NULL, NULL);
+#endif
 	if (i < 0) {
 		dropbear_log(LOG_WARNING, 
 				"pty_allocate: openpty: %.100s", strerror(errno));
 		return 0;
 	}
-	name = ttyname(*ttyfd);
+#if defined(HAVE_TTYNAME)
+	name_ptr = ttyname(*ttyfd);
 	if (!name) {
 		dropbear_exit("ttyname fails for openpty device");
 	}
 
 	strlcpy(namebuf, name, namebuflen);	/* possible truncation */
+#endif
 	return 1;
 #else /* HAVE_OPENPTY */
 #ifdef HAVE__GETPTY

@@ -170,7 +170,8 @@
 #define HAVE_NETINET_TCP_H 1
 
 /* Have openpty() function */
-/* #undef HAVE_OPENPTY */
+/* via openpty.c */
+#define HAVE_OPENPTY
 
 /* Define to 1 if you have the <pam/pam_appl.h> header file. */
 /* #undef HAVE_PAM_PAM_APPL_H */
