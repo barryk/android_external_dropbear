@@ -38,13 +38,13 @@
 /* #undef DISABLE_SYSLOG */
 
 /* Disable use of utmp */
-/* #undef DISABLE_UTMP */
+#define DISABLE_UTMP 1
 
 /* Disable use of utmpx */
 #define DISABLE_UTMPX 1
 
 /* Disable use of wtmp */
-/* #undef DISABLE_WTMP */
+#define DISABLE_WTMP 1
 
 /* Disable use of wtmpx */
 #define DISABLE_WTMPX 1
@@ -98,7 +98,7 @@
 #define HAVE_GETSPNAM 1
 
 /* Define to 1 if you have the `getusershell' function. */
-#define HAVE_GETUSERSHELL 1
+/* #undef HAVE_GETUSERSHELL */
 
 /* Define to 1 if you have the `getutent' function. */
 #define HAVE_GETUTENT 1
@@ -143,7 +143,7 @@
 #define HAVE_LIMITS_H 1
 
 /* Have login() function */
-#define HAVE_LOGIN 
+/* #undef HAVE_LOGIN */
 
 /* Define to 1 if you have the `logout' function. */
 #define HAVE_LOGOUT 1
@@ -170,7 +170,7 @@
 #define HAVE_NETINET_TCP_H 1
 
 /* Have openpty() function */
-#define HAVE_OPENPTY 1
+/* #undef HAVE_OPENPTY */
 
 /* Define to 1 if you have the <pam/pam_appl.h> header file. */
 /* #undef HAVE_PAM_PAM_APPL_H */
@@ -179,7 +179,7 @@
 #define HAVE_PATHS_H 1
 
 /* Define to 1 if you have the <pty.h> header file. */
-#define HAVE_PTY_H 1
+/* #undef HAVE_PTY_H */
 
 /* Define to 1 if you have the `putenv' function. */
 #define HAVE_PUTENV 1
