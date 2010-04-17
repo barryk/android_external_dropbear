@@ -56,7 +56,7 @@
 #define HAVE_BASENAME 1
 
 /* Define to 1 if you have the `clearenv' function. */
-#define HAVE_CLEARENV 1
+/* #undef HAVE_CLEARENV */
 
 /* Define if gai_strerror() returns const char * */
 #define HAVE_CONST_GAI_STRERROR_PROTO 1
