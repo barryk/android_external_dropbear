@@ -71,6 +71,7 @@ LOCAL_SRC_FILES+=\
 	svr-authpasswd.c svr-authpubkey.c svr-authpubkeyoptions.c svr-session.c svr-service.c \
 	svr-chansession.c svr-runopts.c svr-agentfwd.c svr-main.c svr-x11fwd.c \
 	svr-tcpfwd.c svr-authpam.c
+LOCAL_SRC_FILES+=freebsd_crypt.c
 
 
 LOCAL_STATIC_LIBRARIES := libtommath libtomcrypt
