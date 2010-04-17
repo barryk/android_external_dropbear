@@ -53,6 +53,8 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 /* Enable X11 Forwarding - server only */
 #define ENABLE_X11FWD
 
+/* Check for valid user shell */
+/* #define ENABLE_VALID_SHELL_CHECK */
 /* Enable TCP Fowarding */
 /* 'Local' is "-L" style (client listening port forwarded via server)
  * 'Remote' is "-R" style (server listening port forwarded via client) */

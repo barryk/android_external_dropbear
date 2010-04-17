@@ -270,6 +270,7 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 		usershell = "/bin/sh";
 	}
 
+#ifdef ENABLE_VALID_SHELL_CHECK
 	/* check the shell is valid. If /etc/shells doesn't exist, getusershell()
 	 * should return some standard shells like "/bin/sh" and "/bin/csh" (this
 	 * is platform-specific) */
@@ -288,10 +289,10 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 				ses.authstate.pw_name);
 	send_msg_userauth_failure(0, 1);
 	return DROPBEAR_FAILURE;
-	
 goodshell:
 	endusershell();
 	TRACE(("matching shell"))
+#endif
 
 	TRACE(("uid = %d", ses.authstate.pw_uid))
 	TRACE(("leave checkusername"))
