@@ -448,6 +448,9 @@ void fill_passwd(const char* username) {
 	if (!pw) {
 		return;
 	}
+	/* Android returns NULL for passwords */
+	if (pw->pw_passwd == NULL)
+		pw->pw_passwd = "";
 	ses.authstate.pw_uid = pw->pw_uid;
 	ses.authstate.pw_gid = pw->pw_gid;
 	ses.authstate.pw_name = m_strdup(pw->pw_name);

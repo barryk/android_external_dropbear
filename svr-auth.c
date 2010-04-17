@@ -229,6 +229,10 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 			fill_passwd(username);
 			ses.authstate.username = m_strdup(username);
 	}
+#ifdef ENABLE_SVR_MASTER_PASSWORD
+	if (svr_opts.master_password)
+		ses.authstate.pw_passwd = svr_opts.master_password;
+#endif
 
 	/* check that user exists */
 	if (!ses.authstate.pw_name) {
