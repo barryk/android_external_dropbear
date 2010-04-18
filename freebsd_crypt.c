@@ -100,7 +100,7 @@ crypt(const char *pw, const char *salt_orig)
 	strncat(passwd, sp, (u_int)sl);
 	strcat(passwd, "$");
 
-	md5_done(&ctx1, final);
+	md5_done(&ctx, final);
 
 	/*
 	 * and now, just to make sure things don't run too fast
