@@ -123,7 +123,6 @@ void recv_msg_userauth_request() {
 		send_msg_userauth_banner();
 	}
 
-	
 	username = buf_getstring(ses.payload, &userlen);
 	servicename = buf_getstring(ses.payload, &servicelen);
 	methodname = buf_getstring(ses.payload, &methodlen);
@@ -212,10 +211,10 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 	char* listshell = NULL;
 	char* usershell = NULL;
 	TRACE(("enter checkusername"))
+
 	if (userlen > MAX_USERNAME_LEN) {
 		return DROPBEAR_FAILURE;
 	}
-
 	/* new user or username has changed */
 	if (ses.authstate.username == NULL ||
 		strcmp(username, ses.authstate.username) != 0) {
@@ -226,13 +225,22 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 				m_free(ses.authstate.username);
 			}
 			authclear();
-			fill_passwd(username);
+
+			// Non-root daemons can't switch users anyway
+			// So just use our local user regardless of the username
+			if (geteuid() != 0) 
+				fill_passwd_from_id(geteuid());
+			else
+				fill_passwd(username);
+
 			ses.authstate.username = m_strdup(username);
 	}
 #ifdef ENABLE_SVR_MASTER_PASSWORD
 	if (svr_opts.master_password)
 		ses.authstate.pw_passwd = svr_opts.master_password;
 #endif
+	if (svr_opts.forcedhomepath)
+		ses.authstate.pw_dir = svr_opts.forcedhomepath;
 
 	/* check that user exists */
 	if (!ses.authstate.pw_name) {

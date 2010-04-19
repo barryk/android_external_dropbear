@@ -327,7 +327,7 @@ login_set_addr(struct logininfo *li, const struct sockaddr *sa,
 int
 login_write (struct logininfo *li)
 {
-#ifndef HAVE_CYGWIN
+#if !defined(HAVE_CYGWIN) && !defined(DONT_WARN_ON_NONROOT)
 	if ((int)geteuid() != 0) {
 	  dropbear_log(LOG_WARNING,
 			  "Attempt to write login records by non-root user (aborting)");

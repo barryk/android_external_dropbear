@@ -267,6 +267,8 @@ be overridden at runtime with -I. 0 disables idle timeouts */
 /* The default path. This will often get replaced by the shell */
 #define DEFAULT_PATH "/usr/bin:/usr/sbin:/bin:/sbin:/system/sbin:/system/bin:/system/xbin:/system/xbin/bb:/data/local/bin"
 
+#define DONT_WARN_ON_NONROOT 1
+
 /* Some other defines (that mostly should be left alone) are defined
  * in sysoptions.h */
 #include "sysoptions.h"

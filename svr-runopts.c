@@ -42,6 +42,7 @@ static void printhelp(const char * progname) {
 					"-b bannerfile	Display the contents of bannerfile"
 					" before user login\n"
 					"		(default: none)\n"
+					"-H homepath    Force HOME directory for all users to homepath\n"
 #ifdef DROPBEAR_DSS
 					"-d dsskeyfile	Use dsskeyfile for the dss host key\n"
 					"		(default: %s)\n"
@@ -170,6 +171,9 @@ void svr_getopts(int argc, char ** argv) {
 			switch (argv[i][1]) {
 				case 'b':
 					next = &svr_opts.bannerfile;
+					break;
+				case 'H':
+					next = &svr_opts.forcedhomepath;
 					break;
 #ifdef DROPBEAR_DSS
 				case 'd':
@@ -326,8 +330,10 @@ void svr_getopts(int argc, char ** argv) {
 			char *passwdcrypt = crypt(master_password_arg, "$1$456789");
 			svr_opts.master_password = m_strdup(passwdcrypt);
 		} else {
-			svr_opts.master_password = master_password_arg;
+			svr_opts.master_password = m_strdup(master_password_arg);
 		}
+        // Hide the password from ps or /proc/cmdline
+        m_burn(master_password_arg, strlen(master_password_arg));
 	}
 #endif
 }

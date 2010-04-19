@@ -23,7 +23,7 @@
 /* #undef CONF_WTMP_FILE */
 
 /* Disable use of lastlog() */
-/* #undef DISABLE_LASTLOG */
+#define DISABLE_LASTLOG
 
 /* Use PAM */
 #define DISABLE_PAM 

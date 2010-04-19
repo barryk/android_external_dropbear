@@ -433,8 +433,14 @@ const char* get_user_shell() {
 		return ses.authstate.pw_shell;
 	}
 }
+
 void fill_passwd(const char* username) {
-	struct passwd *pw = NULL;
+    fill_passwd_from_struct(getpwnam(username));
+}
+void fill_passwd_from_id(uid_t id) {
+    fill_passwd_from_struct(getpwuid(id));
+}
+void fill_passwd_from_struct(struct passwd *pw) {
 	if (ses.authstate.pw_name)
 		m_free(ses.authstate.pw_name);
 	if (ses.authstate.pw_dir)
@@ -444,7 +450,6 @@ void fill_passwd(const char* username) {
 	if (ses.authstate.pw_passwd)
 		m_free(ses.authstate.pw_passwd);
 
-	pw = getpwnam(username);
 	if (!pw) {
 		return;
 	}
