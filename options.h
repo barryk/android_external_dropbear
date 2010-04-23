@@ -156,6 +156,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 /* PAM requires ./configure --enable-pam */
 /*#define ENABLE_SVR_PAM_AUTH*/
 #define ENABLE_SVR_PUBKEY_AUTH
+#define SKIP_SVR_PUBKEY_PERMISSIONS_CHECK
 
 /* Wether to ake public key options in authorized_keys file into account */
 #ifdef ENABLE_SVR_PUBKEY_AUTH
@@ -268,6 +269,8 @@ be overridden at runtime with -I. 0 disables idle timeouts */
 #define DEFAULT_PATH "/usr/bin:/usr/sbin:/bin:/sbin:/system/sbin:/system/bin:/system/xbin:/system/xbin/bb:/data/local/bin"
 
 #define DONT_WARN_ON_NONROOT 1
+
+#define DONT_RECORD_LOGIN 1
 
 /* Some other defines (that mostly should be left alone) are defined
  * in sysoptions.h */

@@ -81,6 +81,7 @@ typedef struct svr_runopts {
 
 	int noauthpass;
 	int norootpass;
+	int noauthpubkey;
 
 #ifdef ENABLE_SVR_REMOTETCPFWD
 	int noremotetcp;

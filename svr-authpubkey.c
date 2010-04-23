@@ -417,6 +417,7 @@ static int checkfileperm(char * filename) {
 		TRACE(("leave checkfileperm: stat() != 0"))
 		return DROPBEAR_FAILURE;
 	}
+#ifndef SKIP_SVR_PUBKEY_PERMISSIONS_CHECK
 	/* check ownership - user or root only*/
 	if (filestat.st_uid != ses.authstate.pw_uid
 			&& filestat.st_uid != 0) {
@@ -436,6 +437,7 @@ static int checkfileperm(char * filename) {
 		TRACE(("leave checkfileperm: failure perms/owner"))
 		return DROPBEAR_FAILURE;
 	}
+#endif
 
 	TRACE(("leave checkfileperm: success"))
 	return DROPBEAR_SUCCESS;

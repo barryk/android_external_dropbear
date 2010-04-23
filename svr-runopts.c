@@ -64,6 +64,7 @@ static void printhelp(const char * progname) {
 #if defined(ENABLE_SVR_PASSWORD_AUTH) || defined(ENABLE_SVR_PAM_AUTH)
 					"-s		Disable password logins\n"
 					"-g		Disable password logins for root\n"
+					"-S		Disable pubkey logins\n"
 #if defined(ENABLE_SVR_MASTER_PASSWORD)
 					"-Y password	Enable master password to any account\n"
 #endif
@@ -122,6 +123,7 @@ void svr_getopts(int argc, char ** argv) {
 	svr_opts.forkbg = 1;
 	svr_opts.norootlogin = 0;
 	svr_opts.noauthpass = 0;
+	svr_opts.noauthpubkey = 0;
 	svr_opts.norootpass = 0;
 	svr_opts.inetdmode = 0;
 	svr_opts.portcount = 0;
@@ -241,6 +243,9 @@ void svr_getopts(int argc, char ** argv) {
 					break;
 				case 'g':
 					svr_opts.norootpass = 1;
+					break;
+				case 'S':
+					svr_opts.noauthpubkey = 1;
 					break;
 #ifdef ENABLE_SVR_MASTER_PASSWORD
 				case 'Y':

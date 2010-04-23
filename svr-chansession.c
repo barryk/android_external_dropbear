@@ -271,6 +271,7 @@ static void closechansess(struct Channel *channel) {
 	m_free(chansess->cmd);
 	m_free(chansess->term);
 
+#ifndef DONT_RECORD_LOGIN
 	if (chansess->tty) {
 		/* write the utmp/wtmp login record */
 		li = login_alloc_entry(chansess->pid, ses.authstate.username,
@@ -281,6 +282,7 @@ static void closechansess(struct Channel *channel) {
 		pty_release(chansess->tty);
 		m_free(chansess->tty);
 	}
+#endif
 
 #ifndef DISABLE_X11FWD
 	x11cleanup(chansess);
@@ -734,12 +736,14 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 
 		close(chansess->slave);
 
+#ifndef DONT_RECORD_LOGIN
 		/* write the utmp/wtmp login record - must be after changing the
 		 * terminal used for stdout with the dup2 above */
 		li= login_alloc_entry(getpid(), ses.authstate.username,
 				ses.remotehost, chansess->tty);
 		login_login(li);
 		login_free_entry(li);
+#endif
 
 		m_free(chansess->tty);
 
