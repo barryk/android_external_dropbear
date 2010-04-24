@@ -87,6 +87,9 @@ xstrdup(const char *str)
 	size_t len;
 	char *cp;
 
+	/* Android has NULLs in pw operations, might elsewhere too */
+	if (!str) return 0; 
+
 	len = strlen(str) + 1;
 	cp = xmalloc(len);
 	strlcpy(cp, str, len);
