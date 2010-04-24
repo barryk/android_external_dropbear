@@ -86,7 +86,8 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE := dropbear
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/libtommath 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/libtomcrypt/src/headers
-LOCAL_CFLAGS += -DDROPBEAR_SERVER -DANDROID_CHANGES
+LOCAL_CFLAGS += -DDROPBEAR_SERVER -DANDROID_CHANGES  -DSFTPSERVER_PATH='"/data/data/com.teslacoilsw.quicksshd/dropbear/sftp-server"'
+# -DSFTPSERVER_PATH=/data/data/com.teslacoilsw.quicksshd/dropbear/sftp-server
 
 include $(BUILD_EXECUTABLE)
 
