@@ -399,3 +399,14 @@ do_log(LogLevel level, const char *fmt, va_list args)
 	}
 	errno = saved_errno;
 }
+
+void
+fatal(const char *fmt,...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	do_log(SYSLOG_LEVEL_FATAL, fmt, args);
+	va_end(args);
+	exit(255);
+}
