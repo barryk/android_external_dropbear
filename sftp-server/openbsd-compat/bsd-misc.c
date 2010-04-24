@@ -29,6 +29,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "xmalloc.h"
 
@@ -199,6 +200,8 @@ tcsendbreak(int fd, int duration)
 }
 #endif /* HAVE_TCSENDBREAK */
 
+/* Conflicts with bionic *
+/*
 mysig_t
 mysignal(int sig, mysig_t act)
 {
@@ -225,6 +228,7 @@ mysignal(int sig, mysig_t act)
 	return (signal(sig, act));
 #endif
 }
+*/
 
 #ifndef HAVE_STRDUP
 char *
