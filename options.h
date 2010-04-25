@@ -272,6 +272,8 @@ be overridden at runtime with -I. 0 disables idle timeouts */
 
 #define DONT_RECORD_LOGIN 1
 
+#define ALLOW_BLANK_PASSWORDS 1
+
 /* Some other defines (that mostly should be left alone) are defined
  * in sysoptions.h */
 #include "sysoptions.h"

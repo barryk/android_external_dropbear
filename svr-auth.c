@@ -264,6 +264,7 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 		return DROPBEAR_FAILURE;
 	}
 
+#ifndef ALLOW_BLANK_PASSWORDS
 	/* check for an empty password */
 	if (ses.authstate.pw_passwd[0] == '\0') {
 		TRACE(("leave checkusername: empty pword"))
@@ -272,6 +273,7 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 		send_msg_userauth_failure(0, 1);
 		return DROPBEAR_FAILURE;
 	}
+#endif
 
 	TRACE(("shell is %s", ses.authstate.pw_shell))
 
