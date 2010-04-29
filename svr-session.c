@@ -122,7 +122,10 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 
 	char fmtbuf[300];
 
-	if (!sessinitdone) {
+	if (exitflag) {
+		snprintf(fmtbuf, sizeof(fmtbuf),
+			"Exiting normally");
+	} else if (!sessinitdone) {
 		/* before session init */
 		snprintf(fmtbuf, sizeof(fmtbuf), 
 				"premature exit: %s", format);
