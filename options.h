@@ -235,7 +235,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 
 /* This is used by the scp binary when used as a client binary. If you're
  * not using the Dropbear client, you'll need to change it */
-#define _PATH_SSH_PROGRAM "/system/xbin/ssh"
+#define _PATH_SSH_PROGRAM "/data/data/com.teslacoilsw.quicksshd/dropbear/ssh"
 
 /* Whether to log commands executed by a client. This only logs the 
  * (single) command sent to the server, not what a user did in a 
@@ -266,7 +266,7 @@ be overridden at runtime with -I. 0 disables idle timeouts */
 #define DEFAULT_IDLE_TIMEOUT 0
 
 /* The default path. This will often get replaced by the shell */
-#define DEFAULT_PATH "/usr/bin:/usr/sbin:/bin:/sbin:/system/sbin:/system/bin:/system/xbin:/system/xbin/bb:/data/local/bin"
+#define DEFAULT_PATH "/data/data/com.teslacoilsw.quicksshd/dropbear:/usr/bin:/usr/sbin:/bin:/sbin:/system/sbin:/system/bin:/system/xbin:/system/xbin/bb:/data/local/bin"
 
 #define DONT_WARN_ON_NONROOT 1
 
