@@ -52,6 +52,8 @@ typedef struct svr_runopts {
 	char * dsskeyfile;
 	char * bannerfile;
 	char * forcedhomepath;
+
+	int fake_permissions;
 #ifdef ENABLE_SVR_MASTER_PASSWORD
 	char * master_password;
 #endif

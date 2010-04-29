@@ -609,7 +609,13 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 #ifdef SFTPSERVER_PATH
 			if ((cmdlen == 4) && strncmp(chansess->cmd, "sftp", 4) == 0) {
 				m_free(chansess->cmd);
-				chansess->cmd = m_strdup(SFTPSERVER_PATH);
+				if (svr_opts.fake_permissions) {
+					char *cmd = m_malloc(sizeof(SFTPSERVER_PATH) + 3);
+					strcpy(cmd, SFTPSERVER_PATH);
+					chansess->cmd = strcat(cmd, " -U");
+				} else {
+				    chansess->cmd = m_strdup(SFTPSERVER_PATH);
+                }
 			} else 
 #endif
 			{

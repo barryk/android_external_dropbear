@@ -73,6 +73,9 @@ int version;
 /* Disable writes */
 int readonly;
 
+/* Fake permissions, always give user rw */
+int fake_permissions;
+
 /* portable attributes, etc. */
 
 typedef struct Stat Stat;
@@ -697,6 +700,8 @@ process_do_stat(int do_lstat)
 		status = errno_to_portable(errno);
 	} else {
 		stat_to_attrib(&st, &a);
+		if (fake_permissions)
+			a.perm |= (S_IRUSR | S_IWUSR);
 		send_attrib(id, &a);
 		status = SSH2_FX_OK;
 	}
@@ -1364,7 +1369,7 @@ sftp_server_usage(void)
 	extern char *__progname;
 
 	fprintf(stderr,
-	    "usage: %s [-ehR] [-f log_facility] [-l log_level] [-u umask]\n",
+	    "usage: %s [-ehRU] [-f log_facility] [-l log_level] [-u umask]\n",
 	    __progname);
 	exit(1);
 }
@@ -1386,7 +1391,8 @@ sftp_server_main(int argc, char **argv, struct passwd *user_pw)
 	__progname = ssh_get_progname(argv[0]);
 	log_init(__progname, log_level, log_facility, log_stderr);
 
-	while (!skipargs && (ch = getopt(argc, argv, "f:l:u:cehR")) != -1) {
+    fake_permissions = 0;
+	while (!skipargs && (ch = getopt(argc, argv, "f:l:u:cehRU")) != -1) {
 		switch (ch) {
 		case 'R':
 			readonly = 1;
@@ -1417,6 +1423,9 @@ sftp_server_main(int argc, char **argv, struct passwd *user_pw)
 				fatal("Invalid umask \"%s\": %s",
 				    optarg, errmsg);
 			(void)umask(mask);
+			break;
+		case 'U': /* Fake permissions */
+			fake_permissions = 1;
 			break;
 		case 'h':
 		default:

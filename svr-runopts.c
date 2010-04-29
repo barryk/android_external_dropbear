@@ -61,6 +61,7 @@ static void printhelp(const char * progname) {
 					"-m		Don't display the motd on login\n"
 #endif
 					"-w		Disallow root logins\n"
+					"-U		Fake user RW permissions in SFTP\n"
 #if defined(ENABLE_SVR_PASSWORD_AUTH) || defined(ENABLE_SVR_PAM_AUTH)
 					"-s		Disable password logins\n"
 					"-g		Disable password logins for root\n"
@@ -116,6 +117,8 @@ void svr_getopts(int argc, char ** argv) {
 	svr_opts.rsakeyfile = NULL;
 	svr_opts.dsskeyfile = NULL;
 	svr_opts.bannerfile = NULL;
+
+	svr_opts.fake_permissions = 0;
 #ifdef ENABLE_SVR_MASTER_PASSWORD
 	svr_opts.master_password = NULL;
 #endif
@@ -246,6 +249,9 @@ void svr_getopts(int argc, char ** argv) {
 					break;
 				case 'S':
 					svr_opts.noauthpubkey = 1;
+					break;
+				case 'U':
+					svr_opts.fake_permissions = 1;
 					break;
 #ifdef ENABLE_SVR_MASTER_PASSWORD
 				case 'Y':
