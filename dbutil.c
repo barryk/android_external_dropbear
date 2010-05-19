@@ -518,8 +518,27 @@ void run_shell_command(const char* cmd, unsigned int maxfd, char* usershell) {
 
 	/* close file descriptors except stdin/stdout/stderr
 	 * Need to be sure FDs are closed here to avoid reading files as root */
+
+#ifdef ANDROID_CHANGES
+    /* keep the fd pointing to the property workspace open */
+    char *pws = getenv("ANDROID_PROPERTY_WORKSPACE");
+    int pws_fd = 0; /* 0 is safe, it will never be compared against below */
+    if (pws) {
+        char *pws2 = strdup(pws);
+        char *comma = strchr(pws2, ',');
+        if (comma) {
+            comma = '\0';
+            pws_fd = atoi(pws2);
+        }
+        free(pws2);
+    }
+#endif
+
 	for (i = 3; i <= maxfd; i++) {
-		m_close(i);
+#ifdef ANDROID_CHANGES
+        if (i != pws_fd)
+#endif
+            m_close(i);
 	}
 
 	execv(usershell, argv);

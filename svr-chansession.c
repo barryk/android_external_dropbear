@@ -845,6 +845,27 @@ static void execchild(void *user_data) {
 	reseedrandom();
 #endif
 
+#ifdef ANDROID_CHANGES
+    /* save some android-specific environment variables */
+    const char *and_env_name[] = { "ANDROID_ASSETS",
+                                   "ANDROID_BOOTLOGO",
+                                   "ANDROID_DATA",
+                                   "ANDROID_PROPERTY_WORKSPACE",
+                                   "ANDROID_ROOT",
+                                   "BOOTCLASSPATH",
+                                   "EXTERNAL_STORAGE",
+                                   "SD_EXT_DIRECTORY"
+                                 };
+    const int and_env_count = sizeof(and_env_name) / sizeof(*and_env_name);
+    char *and_env_value[and_env_count];
+
+    int i;
+    for (i = 0; i < and_env_count; i++) {
+        char *val = getenv(and_env_name[i]);
+        and_env_value[i] = val ? strdup(val) : NULL;
+    }
+#endif
+
 	/* clear environment */
 	/* if we're debugging using valgrind etc, we need to keep the LD_PRELOAD
 	 * etc. This is hazardous, so should only be used for debugging. */
@@ -892,6 +913,14 @@ static void execchild(void *user_data) {
 	if (chansess->term != NULL) {
 		addnewvar("TERM", chansess->term);
 	}
+#ifdef ANDROID_CHANGES
+    for (i = 0; i < and_env_count; i++) {
+        if (and_env_value[i]) {
+            addnewvar(and_env_name[i], and_env_value[i]);
+            free(and_env_value[i]);
+        }
+     }
+#endif
 
 	/* change directory */
 	if (chdir(ses.authstate.pw_dir) < 0) {
