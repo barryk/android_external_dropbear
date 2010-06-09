@@ -645,7 +645,11 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 
 	if (ret == DROPBEAR_FAILURE) {
 		m_free(chansess->cmd);
-	}
+	} else {
+#ifdef RUN_CMD_ON_SESSION_COMMAND
+        system(RUN_CMD_ON_SESSION_COMMAND);
+#endif
+    }
 	return ret;
 }
 
